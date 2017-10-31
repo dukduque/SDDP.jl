@@ -49,6 +49,20 @@ function writecut!(filename::String, cut::Cut, stage::Int, markovstate::Int)
     end
 end
 
+"""
+    loadcuts!(m::SDDPModel, filename::String)
+
+Load cuts from the file created using the `cut_output_file` argument
+in `solve`.
+
+### Example
+
+    m = SDDPModel() do ... end
+    status = solve(m; cut_output_file="path/to/m.cuts")`
+    m2 = SDDPModel() do ... end
+    loadcuts!(m2, "path/to/m.cuts")
+
+"""
 function loadcuts!{C}(m::SDDPModel{DefaultValueFunction{C}}, filename::String)
     open(filename, "r") do file
         while true
@@ -79,13 +93,15 @@ function modifyvaluefunction!{V<:DefaultValueFunction}(m::SDDPModel{V}, settings
     for i in I
         m.storage.probability[i] *= getstage(m, ex.stage+1).transitionprobabilities[ex.markovstate, m.storage.markov[i]]
     end
-    modifyprobability!(ex.riskmeasure,
-        view(m.storage.modifiedprobability.data, I),
-        m.storage.probability.data[I],
-        m.storage.objective.data[I],
-        m,
-        sp
-    )
+    @timeit TIMER "risk measure" begin
+        modifyprobability!(ex.riskmeasure,
+            view(m.storage.modifiedprobability.data, I),
+            m.storage.probability.data[I],
+            m.storage.objective.data[I],
+            m,
+            sp
+        )
+    end
     cut = constructcut(m, sp)
 
     if writecuts && settings.cut_output_file != ""

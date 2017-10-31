@@ -187,9 +187,22 @@ end
 hasnoises(sp::JuMP.Model) = length(ext(sp).noises) > 0
 
 function JuMPsolve{T<:IterationDirection}(::Type{T}, ::SDDPModel, sp::JuMP.Model)
-    @assert JuMP.solve(sp) == :Optimal
+    @timeit TIMER "JuMP.solve" begin
+        # @assert JuMP.solve(sp) == :Optimal
+        @assert jumpsolve(sp) == :Optimal
+    end
 end
 
+"""
+    SDDP.savemodel!(filename::String, m::SDDPModel)
+
+Save the SDDPModel `m` to the location `filename`. Can be loaded at a later date
+with `m = SDDP.loadmodel(filename)`.
+
+Note: this function relies in the internal Julia `Base.serialize`function. It
+should not be relied on to save an load models between versions of Julia (i.e
+between v0.5 and v0.6). For a longer-term solution, see `SDDP.loadcuts!` for help.
+"""
 function savemodel!(filename::String, m::SDDPModel)
     for stage in stages(m)
         for sp in subproblems(stage)
@@ -213,9 +226,13 @@ function load(filename::String)
 end
 
 """
-    Deserialize a serialized model. Not guaranteed to work or remain supported.
-    The Base serializer is subject to change at any point. Use the JLD package
-    if you want to save objects long-term.
+    loadmodel(filename::String)
+
+Load a model from the location `filename` that was saved using `SDDP.savemodel!`.
+
+Note: this function relies in the internal Julia `Base.serialize`function. It
+should not be relied on to save an load models between versions of Julia (i.e
+between v0.5 and v0.6). For a longer-term solution, see `SDDP.loadcuts!` for help.
 """
 function loadmodel(filename::String)
     # We're going to need this to be merged into the copy of Julia that the user
