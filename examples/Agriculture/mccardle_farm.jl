@@ -6,8 +6,8 @@
 
 #
 #    Inspired by
-#       R. McCardle,  Farm management optimization.,  Master’s thesis,  University
-#       of Louisville,  Louisville,  Kentucky, United States of America (2009)
+#       R. McCardle, Farm management optimization. Masters thesis, University
+#       of Louisville, Louisville, Kentucky, United States of America (2009)
 #
 
 using SDDP, JuMP, Clp
@@ -68,7 +68,7 @@ function mccardle_farm_model()
 
     m = SDDPModel(
                  stages = 4,
-        objective_bound = 0.0,
+        objective_bound = [0.0, 0.0, 0.0, 0.0],
                   sense = :Min,
       markov_transition = transition,
                  solver = ClpSolver()
