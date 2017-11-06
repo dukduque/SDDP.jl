@@ -9,7 +9,14 @@ using SDDP, JuMP, Clp, Base.Test
 # For repeatability
 srand(11111)
 
-include(joinpath(dirname(@__FILE__), "hydro_valley.jl"))
+include(joinpath(dirname(@__FILE__), "hydro_valley2.jl"))
+
+# ddv test  AR1 model
+stagewise_model = hydrovalleymodel(hasmarkovprice=false, riskmeasure = NestedAVaR(lambda=0.5, beta=0.0))
+SDDP.solve(stagewise_model, max_iterations=10, print_level=2)
+
+@test isapprox(getbound(stagewise_model), 838.33, atol=1e-2)
+
 
 # deterministic
 deterministic_model = hydrovalleymodel(hasmarkovprice=false,hasstagewiseinflows=false)
@@ -35,7 +42,7 @@ SDDP.solve(markov_stagewise_model, max_iterations=10, print_level=0)
 riskaverse_model = hydrovalleymodel(riskmeasure = NestedAVaR(lambda=0.5, beta=0.66))
 SDDP.solve(riskaverse_model,
     max_iterations = 10,
-    print_level = 0
+    print_level = 1
 )
 
 @test isapprox(getbound(riskaverse_model), 828.157, atol=1e-3)
