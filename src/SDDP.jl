@@ -144,7 +144,7 @@ function SDDPModel(build!::Function;
     solver               = UnsetSolver(),
     value_function       = DefaultValueFunction(cut_oracle),
     )
-    print("This is working now")
+    
     if objective_bound == nothing
         error("You must specify the objective_bound keyword")
     end

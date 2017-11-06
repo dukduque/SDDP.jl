@@ -8,6 +8,7 @@ function printheader{T}(io::IO, m::SDDPModel{T}, solve_type)
     n = length(m.stages)
     println(io, """--------------------------------------------------------------------------------
                           SDDP Solver. © Oscar Dowson, 2017.
+                          And some changes
     --------------------------------------------------------------------------------""")
     println(io, """    Solver:
             $(solve_type)
