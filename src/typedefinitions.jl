@@ -61,6 +61,13 @@ immutable Cut
     coefficients::Vector{Float64}
 end
 
+# struct Cut for AR1
+immutable CutAR1
+    intercept::Float64 #independent part
+    coefficients::Vector{Float64}
+    dependent::verctor{Float64} #dependent part of the intercept
+end
+
 immutable State
     variable::JuMP.Variable
     constraint::LinearConstraint
