@@ -8,6 +8,7 @@ function printheader{T}(io::IO, m::SDDPModel{T}, solve_type)
     n = length(m.stages)
     println(io, """--------------------------------------------------------------------------------
                           SDDP Solver. © Oscar Dowson, 2017.
+                          And some changes
     --------------------------------------------------------------------------------""")
     println(io, """    Solver:
             $(solve_type)
@@ -36,12 +37,12 @@ end
 
 function Base.print(io::IO, l::SolutionLog, printmean::Bool=false, is_min=true)
     if printmean
-        bound_string = string("       ", humanize(0.5 * (l.lower_statistical_bound + l.upper_statistical_bound), "8.5f"), "     ")
+        bound_string = string("     ", humanize(0.5 * (l.lower_statistical_bound + l.upper_statistical_bound), "8.3f"), "     ")
         rtol_string = "      "
     else
         bound_string = string(
-            humanize(l.lower_statistical_bound, "8.5f"), " ",
-            humanize(l.upper_statistical_bound, "8.5f")
+            humanize(l.lower_statistical_bound, "8.3f"), " ",
+            humanize(l.upper_statistical_bound, "8.3f")
         )
         if is_min
             tol = 100*rtol(l.lower_statistical_bound, l.bound)
