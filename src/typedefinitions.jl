@@ -65,7 +65,7 @@ end
 immutable CutAR1
     intercept::Float64 #independent part
     coefficients::Vector{Float64}
-    dependent::vector{Float64} #dependent part of the intercept
+    dependent::Vector{Float64} #dependent part of the intercept
 end
 
 immutable State
