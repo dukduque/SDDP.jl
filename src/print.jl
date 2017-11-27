@@ -36,7 +36,7 @@ end
 
 function Base.print(io::IO, l::SolutionLog, printmean::Bool=false, is_min=true)
     if printmean
-        bound_string = string("     ", humanize(0.5 * (l.lower_statistical_bound + l.upper_statistical_bound), "8.5f"), "     ")
+        bound_string = string("       ", humanize(0.5 * (l.lower_statistical_bound + l.upper_statistical_bound), "8.5f"), "     ")
         rtol_string = "      "
     else
         bound_string = string(
