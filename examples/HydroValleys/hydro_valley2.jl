@@ -38,7 +38,6 @@ immutable Reservoir
     initial::Float64
     turbine::Turbine
     spill_cost::Float64
-    inflows::Vector{Float64}
     normNoise::Vector{Float64}
 end
 
@@ -51,20 +50,25 @@ function hydrovalleymodel(;
     )
 
     valley_chain = [
-        Reservoir(0, 200, 200, Turbine([50, 60, 70], [55, 65, 70]), 1000, [0, 20, 50] , [-5, 0 , 5]),
-        Reservoir(0, 200, 200, Turbine([50, 60, 70], [55, 65, 70]), 1000, [0, 0,  20] , [-5, 0 , 5]),
-        Reservoir(0, 200, 100, Turbine([10, 60, 70], [10, 65, 70]), 1000, [0, 0,  20] , [-5, 0 , 5]),
-        Reservoir(0, 100, 100, Turbine([10, 60, 70], [10, 50, 70]), 1000, [0, 0,  20] , [-5, 0 , 5])
+        Reservoir(0, 200, 200, Turbine([50, 60, 70], [55, 65, 70]), 1000,  [-14.79,    5.37,    25.53]),
+        Reservoir(0, 200, 200, Turbine([50, 60, 70], [55, 65, 70]), 1000,  [-15.84,    3.22,    22.29]),
+        Reservoir(0, 200, 200, Turbine([50, 60, 70], [55, 65, 70]), 1000,  [-15.84,    3.22,    22.29]),
+        Reservoir(0, 200, 200, Turbine([50, 60, 70], [55, 65, 70]), 1000,  [-15.84,    3.22,    22.29])
     ]
+
     turbine(i) = valley_chain[i].turbine
 
-    autoreg = [0.9 0.2;
-                0.1 1.1]
+    autoreg = [0.032888513 0.004994359 0.04994359 0.04994359;
+               0.019920893 0.006122677 0.04994359 0.04994359;
+               0.019920893 0.086122677 0.04994359 0.04994359;
+               0.019920893 0.086122677 0.04994359 0.04994359]
+
     # Prices[stage, markov state]
     prices = [
         1 2 0;
         2 1 0;
-        3 4 0
+        3 4 0;
+        4 2 0
     ]
 
     # Transition matrix
@@ -75,7 +79,7 @@ function hydrovalleymodel(;
             [ 0.6 0.4 0.0; 0.3 0.7 0.0]
         ]
     else
-        transition = [ones(Float64, (1,1)) for t in 1:3]
+        transition = [ones(Float64, (1,1)) for t in 1:4]
     end
 
     flipobj = (sense == :Max)?1.0:-1.0
@@ -85,7 +89,7 @@ function hydrovalleymodel(;
     # Initialise SDDP Model
     m = SDDPModel(
                 sense           = sense,
-                stages          = 3,
+                stages          = 4,
                 objective_bound = flipobj * 1e6,
                 markov_transition = transition,
                 risk_measure    = riskmeasure,
@@ -98,7 +102,7 @@ function hydrovalleymodel(;
         # Level of upper reservoir
         @states(sp, begin
                 valley_chain[r].min <= reservoir[r=1:N] <= valley_chain[r].max, reservoir0==valley_chain[r].initial
-                s_inflow[r=1:N], s_inflow0==valley_chain[r].inflows[2]
+                s_inflow[r=1:N], s_inflow0==0
             end)
         # ------------------------------------------------------------------
         #   Additional variables
@@ -106,7 +110,6 @@ function hydrovalleymodel(;
         @variables(sp, begin
             outflow[r=1:N]      >= 0
             spill[r=1:N]        >= 0
-            inflow[r=1:N]       >= 0
             generation_quantity >= 0 # Total quantity of water
             # Proportion of levels to dispatch on
             0 <= dispatch[r=1:N, level=1:length(turbine(r).flowknots)] <= 1
@@ -134,17 +137,14 @@ function hydrovalleymodel(;
 
         # rainfall noises
         for i in 1:N
-            if stage == 1
-                @constraint(sp, s_inflow[i] == s_inflow0[i])
-            end
 
             if hasstagewiseinflows && stage > 1 # in future stages random inflows
-                #Inflow autoreg model  -sum(autoreg[i,j]*s_inflow0[j] for j in 1:N)
-                @rhsnoise(sp, rainfall = valley_chain[i].normNoise, s_inflow[i]-s_inflow0[i]==rainfall)
+                #Inflow autoreg model
+                @rhsnoise(sp, rainfall = valley_chain[i].normNoise, s_inflow[i]-sum(autoreg[i,j]*s_inflow0[j] for j in 1:N)==rainfall)
                 #@rhsnoise(sp, rainfall = valley_chain[i].inflows, inflow[i] <= rainfall)
             else # in the first stage deterministic inflow
                 #@constraint(sp, s_inflow[i]=autoreg*s_inflow0[i])
-                @constraint(sp, inflow[i] == valley_chain[i].inflows[3])
+                @constraint(sp, s_inflow[i] == 0)
             end
         end
 

@@ -12,8 +12,8 @@ srand(11111)
 include(joinpath(dirname(@__FILE__), "hydro_valley2.jl"))
 
 # ddv test  AR1 model
-stagewise_model = hydrovalleymodel(hasmarkovprice=false, riskmeasure = NestedAVaR(lambda=0.5, beta=0.0))
-SDDP.solve(stagewise_model, max_iterations=10, print_level=2)
+stagewise_model = hydrovalleymodel(hasmarkovprice=false)
+SDDP.solve(stagewise_model, max_iterations=30, print_level=1)
 
 @test isapprox(getbound(stagewise_model), 838.33, atol=1e-2)
 
@@ -25,7 +25,7 @@ SDDP.solve(deterministic_model, max_iterations=10, cut_selection_frequency=1)
 
 # stagewise inflows
 stagewise_model = hydrovalleymodel(hasmarkovprice=false)
-SDDP.solve(stagewise_model, max_iterations=20, print_level=0)
+SDDP.solve(stagewise_model, max_iterations=20, print_level=2)
 @test isapprox(getbound(stagewise_model), 838.33, atol=1e-2)
 
 # markov prices
