@@ -13,7 +13,7 @@ include(joinpath(dirname(@__FILE__), "hydro_valley2.jl"))
 
 # ddv test  AR1 model
 stagewise_model = hydrovalleymodel(hasmarkovprice=false)
-SDDP.solve(stagewise_model, max_iterations=30, print_level=1)
+SDDP.solve(stagewise_model, max_iterations=1000, print_level=1)
 
 @test isapprox(getbound(stagewise_model), 838.33, atol=1e-2)
 

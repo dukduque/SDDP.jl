@@ -55,7 +55,7 @@ function Base.print(io::IO, l::SolutionLog, printmean::Bool=false, is_min=true)
     println(io,
         @sprintf("%s %s %s | %s %s %s %s %s",
             bound_string,
-            humanize(l.bound, "8.3f"),
+            humanize(l.bound, "8.6f"),
             rtol_string,
             humanize(l.iteration),
             humanize(l.timecuts),

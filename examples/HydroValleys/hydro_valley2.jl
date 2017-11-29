@@ -48,27 +48,31 @@ function hydrovalleymodel(;
         hasmarkovprice::Bool=true,
         sense::Symbol=:Max
     )
-
+    T = 3
     valley_chain = [
-        Reservoir(0, 200, 200, Turbine([50, 60, 70], [55, 65, 70]), 1000,  [-14.79,    5.37,    25.53]),
-        Reservoir(0, 200, 200, Turbine([50, 60, 70], [55, 65, 70]), 1000,  [-15.84,    3.22,    22.29]),
-        Reservoir(0, 200, 200, Turbine([50, 60, 70], [55, 65, 70]), 1000,  [-15.84,    3.22,    22.29]),
-        Reservoir(0, 200, 200, Turbine([50, 60, 70], [55, 65, 70]), 1000,  [-15.84,    3.22,    22.29])
-    ]
+        Reservoir(0, 200, 200, Turbine([50, 60, 70], [55, 65, 70]), 1000, [-12.626063, -3.704914,  5.216234]),
+        Reservoir(0, 200, 200, Turbine([50, 60, 70], [55, 65, 70]), 1000, [10.734489, 22.298040, 33.861590]),
+        Reservoir(0, 200, 200, Turbine([50, 60, 70], [55, 65, 70]), 1000, [-11.599395 , 5.652446,22.904287]),
+        Reservoir(0, 200, 200, Turbine([50, 60, 70], [55, 65, 70]), 1000, [-8.867397 , 8.238426, 25.344249])]
 
     turbine(i) = valley_chain[i].turbine
 
-    autoreg = [0.032888513 0.004994359 0.04994359 0.04994359;
-               0.019920893 0.006122677 0.04994359 0.04994359;
-               0.019920893 0.086122677 0.04994359 0.04994359;
-               0.019920893 0.086122677 0.04994359 0.04994359]
+    autoreg = [0.894155785206891 0.187191166096471 -0.128736587791406 0.128227942329335;
+                -0.328397404318301 0.695183935103107 -0.0913626214178796 0.0289323912343019;
+                0.585025574269405 0.531110268093871 -0.113118385105778 -0.16903444953985;
+                0.510092039498543 0.203814073453963 0.0196469487416793 0.150465728201917]
+
 
     # Prices[stage, markov state]
     prices = [
         1 2 0;
         2 1 0;
         3 4 0;
-        4 2 0
+        4 2 0;
+        3 1 0;
+        4 1 0;
+        3 1 0;
+        4 1 0;
     ]
 
     # Transition matrix
@@ -79,7 +83,7 @@ function hydrovalleymodel(;
             [ 0.6 0.4 0.0; 0.3 0.7 0.0]
         ]
     else
-        transition = [ones(Float64, (1,1)) for t in 1:4]
+        transition = [ones(Float64, (1,1)) for t in 1:T]
     end
 
     flipobj = (sense == :Max)?1.0:-1.0
@@ -89,7 +93,7 @@ function hydrovalleymodel(;
     # Initialise SDDP Model
     m = SDDPModel(
                 sense           = sense,
-                stages          = 4,
+                stages          = T,
                 objective_bound = flipobj * 1e6,
                 markov_transition = transition,
                 risk_measure    = riskmeasure,
@@ -110,6 +114,7 @@ function hydrovalleymodel(;
         @variables(sp, begin
             outflow[r=1:N]      >= 0
             spill[r=1:N]        >= 0
+            pour[r=1:N]        >= 0
             generation_quantity >= 0 # Total quantity of water
             # Proportion of levels to dispatch on
             0 <= dispatch[r=1:N, level=1:length(turbine(r).flowknots)] <= 1
@@ -119,10 +124,10 @@ function hydrovalleymodel(;
         # Constraints
         @constraints(sp, begin
             # flow from upper reservoir
-            reservoir[1] == reservoir0[1] + s_inflow[1] - outflow[1] - spill[1]
+            reservoir[1] == reservoir0[1] + s_inflow[1] - outflow[1] - spill[1] + pour[1]
 
             # other flows
-            flow[i=2:N], reservoir[i] == reservoir0[i] + s_inflow[i] - outflow[i] - spill[i] + outflow[i-1] + spill[i-1]
+            flow[i=2:N], reservoir[i] == reservoir0[i] + s_inflow[i] - outflow[i] - spill[i] + pour[i] + outflow[i-1] + spill[i-1]
 
             # Total quantity generated
             generation_quantity == sum(turbine(r).powerknots[level] * dispatch[r,level] for r in 1:N for level in 1:length(turbine(r).powerknots))
@@ -151,7 +156,7 @@ function hydrovalleymodel(;
         # ------------------------------------------------------------------
         #   Objective Function
         if hasmarkovprice
-            @stageobjective(sp, flipobj * (prices[stage, markov_state]*generation_quantity - sum(valley_chain[i].spill_cost * spill[i] for i in 1:N)))
+            @stageobjective(sp, flipobj * (prices[stage, markov_state]*generation_quantity - sum(valley_chain[i].spill_cost*(spill[i]+pour[i])for i in 1:N)))
         else
             @stageobjective(sp, flipobj * (prices[stage, 1]*generation_quantity - sum(valley_chain[i].spill_cost * spill[i] for i in 1:N)))
         end
