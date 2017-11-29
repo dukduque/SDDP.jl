@@ -37,12 +37,12 @@ end
 
 function Base.print(io::IO, l::SolutionLog, printmean::Bool=false, is_min=true)
     if printmean
-        bound_string = string("     ", humanize(0.5 * (l.lower_statistical_bound + l.upper_statistical_bound), "8.3f"), "     ")
+        bound_string = string("     ", humanize(0.5 * (l.lower_statistical_bound + l.upper_statistical_bound), "8.6f"), "     ")
         rtol_string = "      "
     else
         bound_string = string(
-            humanize(l.lower_statistical_bound, "8.3f"), " ",
-            humanize(l.upper_statistical_bound, "8.3f")
+            humanize(l.lower_statistical_bound, "8.6f"), " ",
+            humanize(l.upper_statistical_bound, "8.6f")
         )
         if is_min
             tol = 100*rtol(l.lower_statistical_bound, l.bound)
