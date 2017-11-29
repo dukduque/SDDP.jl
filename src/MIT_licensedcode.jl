@@ -21,6 +21,7 @@ const base   = 1000.0
 humanize51f(v,s) = @sprintf("% 5.1f%s", v, s)
 humanize52f(v,s) = @sprintf("% 5.2f%s", v, s)
 humanize83f(v,s) = @sprintf("% 8.3f%s", v, s)
+humanize86f(v,s) = @sprintf("% 8.6f%s", v, s)
 humanize5d(v,s)  = @sprintf("% 5d%s", v, s)
 
 function humanize(value::Number, fmt_str::String="5.1f")
@@ -30,6 +31,8 @@ function humanize(value::Number, fmt_str::String="5.1f")
         return humanize(value, humanize52f)
     elseif fmt_str == "8.3f"
         return humanize(value, humanize83f)
+    elseif fmt_str == "8.6f"
+        return humanize(value, humanize86f)
     elseif fmt_str == "5d"
         return humanize(value, humanize5d)
     end
